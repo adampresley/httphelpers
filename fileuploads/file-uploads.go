@@ -59,6 +59,10 @@ func ReadUploadedFile(fieldName string, r *http.Request, callback func(file File
 
 	defer uploadedFile.Close()
 
+	if info.Size > opts.MaxFileSize {
+		return fmt.Errorf("file size of %d bytes exceeds the limit of %d bytes", info.Size, opts.MaxFileSize)
+	}
+
 	callbackData := FileUpload{
 		File: uploadedFile,
 		info: info,
@@ -92,7 +96,7 @@ func UploadFileToDir(fieldName string, r *http.Request, destDir string, destFile
 			"randomString": randomString(options.RandomStringSize),
 		}
 
-		if tt, err = template.New("fileupload").Parse(destFileNameTemplate); err != nil {
+		if tt, err = template.New("fileupload").Option("missingkey=error").Parse(destFileNameTemplate); err != nil {
 			return fmt.Errorf("error parsing destination file name template: %w", err)
 		}
 
@@ -103,9 +107,18 @@ func UploadFileToDir(fieldName string, r *http.Request, destDir string, destFile
 		/*
 		 * Move the uploaded file to the destination directory
 		 */
-		if tempFile, err = os.CreateTemp(destDir, destFileName.String()); err != nil {
-			return fmt.Errorf("error creating temporary file '%s': %w", destFileName.String(), err)
+		finalPath := filepath.Join(destDir, destFileName.String())
+
+		// Security check to ensure the file path is within the destination directory
+		if !strings.HasPrefix(finalPath, filepath.Clean(destDir)) {
+			return fmt.Errorf("invalid destination file path attempted: %s", destFileName.String())
 		}
+
+		if tempFile, err = os.Create(finalPath); err != nil {
+			return fmt.Errorf("error creating file '%s': %w", destFileName.String(), err)
+		}
+
+		defer tempFile.Close()
 
 		if _, err = io.Copy(tempFile, file.File); err != nil {
 			tempFile.Close()

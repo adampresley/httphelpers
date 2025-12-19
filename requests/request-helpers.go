@@ -16,15 +16,13 @@ If the header is missing or malformed, an error is returned.
 */
 func GetAuthorizationBearer(r *http.Request) (string, error) {
 	authHeader := r.Header.Get("Authorization")
+	bearerParts := strings.Fields(authHeader)
 
-	bearerPart := strings.TrimSpace(authHeader)
-	bearerParts := strings.Split(bearerPart, " ")
-
-	if len(bearerParts) < 2 {
+	if len(bearerParts) != 2 || strings.ToLower(bearerParts[0]) != "bearer" {
 		return "", fmt.Errorf("invalid bearer authorization header")
 	}
 
-	return strings.TrimSpace(bearerParts[1]), nil
+	return bearerParts[1], nil
 }
 
 /*

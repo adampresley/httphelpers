@@ -53,9 +53,7 @@ func Json(w http.ResponseWriter, status int, value any) {
 		return
 	}
 
-	if status > 299 {
-		w.WriteHeader(status)
-	}
+	w.WriteHeader(status)
 
 	_, _ = fmt.Fprintf(w, "%s", string(b))
 }
@@ -147,9 +145,7 @@ func TextUnauthorized(w http.ResponseWriter, value any) {
 func write(w http.ResponseWriter, contentType string, status int, value any) {
 	w.Header().Set("Content-Type", contentType)
 
-	if status > 299 {
-		w.WriteHeader(status)
-	}
+	w.WriteHeader(status)
 
 	_, _ = fmt.Fprintf(w, "%v", value)
 }
