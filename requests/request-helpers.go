@@ -11,10 +11,10 @@ import (
 )
 
 /*
-GetAuthorizationBearer returns the token portion of a Bearer authorization header.
+AuthorizationBearer returns the token portion of a Bearer authorization header.
 If the header is missing or malformed, an error is returned.
 */
-func GetAuthorizationBearer(r *http.Request) (string, error) {
+func AuthorizationBearer(r *http.Request) (string, error) {
 	authHeader := r.Header.Get("Authorization")
 	bearerParts := strings.Fields(authHeader)
 
@@ -26,7 +26,41 @@ func GetAuthorizationBearer(r *http.Request) (string, error) {
 }
 
 /*
-GetFromRequest retrieves a value from the request's form or path parameters.
+Body reads the body content from an http.Request. It attempts to
+determine the content type and parse the body accordingly. If the type
+is unknown, it returns an error.
+*/
+func Body[T any](r *http.Request) (T, error) {
+	var (
+		err    error
+		b      []byte
+		result T
+	)
+
+	if b, err = io.ReadAll(r.Body); err != nil {
+		return result, fmt.Errorf("error reading request body: %w", err)
+	}
+
+	switch r.Header.Get("Content-Type") {
+	case "application/json":
+		if err = json.Unmarshal(b, &result); err != nil {
+			return result, fmt.Errorf("error unmarshaling body to destination: %w, contents: %s", err, string(b))
+		}
+
+	case "application/xml":
+		if err = xml.Unmarshal(b, &result); err != nil {
+			return result, fmt.Errorf("error unmarshaling body to destination: %w, contents: %s", err, string(b))
+		}
+
+	default:
+		return result, fmt.Errorf("unsupported content type: %s", r.Header.Get("Content-Type"))
+	}
+
+	return result, nil
+}
+
+/*
+Get retrieves a value from the request's form or path parameters.
 It supports the following types:
 
   - []string
@@ -34,7 +68,7 @@ It supports the following types:
   - int, int32, int64, uint, uint32, uint64, []int, []int32, []int64, []uint, []uint32, []uint64
   - float32, float64, []float32, []float64
 */
-func GetFromRequest[T RequestTypes](r *http.Request, name string) T {
+func Get[T RequestTypes](r *http.Request, name string) T {
 	var (
 		err  error
 		cast T
@@ -165,20 +199,6 @@ func GetFromRequest[T RequestTypes](r *http.Request, name string) T {
 }
 
 /*
-GetStringListFromRequest returns a string slice from a delimited string on
-form or query param.
-*/
-func GetStringListFromRequest(r *http.Request, name, seperator string) []string {
-	var (
-		value []string
-	)
-
-	values := r.FormValue(name)
-	value = strings.Split(values, seperator)
-	return value
-}
-
-/*
 IsHtmx returns true if the request came from the Htmx library.
 */
 func IsHtmx(r *http.Request) bool {
@@ -186,37 +206,17 @@ func IsHtmx(r *http.Request) bool {
 }
 
 /*
-ReadBody reads the body content from an http.Request. It attempts to
-determine the content type and parse the body accordingly. If the type
-is unknown, it returns an error.
+StringListFromRequest returns a string slice from a delimited string on
+form or query param.
 */
-func ReadBody[T any](r *http.Request) (T, error) {
+func StringListFromRequest(r *http.Request, name, seperator string) []string {
 	var (
-		err    error
-		b      []byte
-		result T
+		value []string
 	)
 
-	if b, err = io.ReadAll(r.Body); err != nil {
-		return result, fmt.Errorf("error reading request body: %w", err)
-	}
-
-	switch r.Header.Get("Content-Type") {
-	case "application/json":
-		if err = json.Unmarshal(b, &result); err != nil {
-			return result, fmt.Errorf("error unmarshaling body to destination: %w, contents: %s", err, string(b))
-		}
-
-	case "application/xml":
-		if err = xml.Unmarshal(b, &result); err != nil {
-			return result, fmt.Errorf("error unmarshaling body to destination: %w, contents: %s", err, string(b))
-		}
-
-	default:
-		return result, fmt.Errorf("unsupported content type: %s", r.Header.Get("Content-Type"))
-	}
-
-	return result, nil
+	values := r.FormValue(name)
+	value = strings.Split(values, seperator)
+	return value
 }
 
 func getInt(r *http.Request, name string, size int) int64 {

@@ -1,24 +1,22 @@
 # Requests
 
-## GetAuthorizationBearer
+## AuthorizationBearer
 
-**GetAuthorizationBearer** returns the token portion of a Bearer authorization
-header. If the header is missing or malformed, an error returned.
+**AuthorizationBearer** returns the token portion of a Bearer authorization
+header. If the header is missing or malformed, an error is returned.
 
 ```go
-token, err := httphelpers.GetAuthorizationBearer(r)
+token, err := requests.AuthorizationBearer(r)
 ```
 
-## GetFromRequest
+## Get
 
-**GetFromRequest** attempts to retrieve a value from an HTTP request from all
-possible sources, similar to how PHP's `$_REQUEST` array works. Here is the
-order of precedence.
+**Get** attempts to retrieve a value from an HTTP request from all
+possible sources. Here is the order of precedence.
 
-1. FORM
-2. Query
-3. Multipart form data
-4. Path
+1. POST, PUT, or PATCH form data
+2. URL query parameters
+3. Path parameters
 
 This method uses generics for the type that shold be returned. It supports
 the following data types: `int, int32, int64, []int, []int32, []int64, uint, uint32, uint64, []uint, []uint32, []uint64, float32, float64, []float32, []float64, string, []string, bool`.
@@ -28,18 +26,18 @@ Here is a small sample:
 
 ```go
 // r is *http.Request
-names := httphelpers.GetFromRequest[[]string](r, "names")
-age := httphelpers.GetFromRequest[int](r, "age")
+names := requests.Get[[]string](r, "names")
+age := requests.Get[int](r, "age")
 ```
 
-## GetStringListFromRequest
+## StringListFromRequest
 
-**GetStringListFromRequest** takes a delimited string from FORM or URL and
+**StringListFromRequest** takes a delimited string from FORM or URL and
 returns a split string slice of values.
 
 ```go
 // Example URL: /?input=1,5,10
-inputs := httphelpers.GetStringListFromRequest(r, "input", ",")
+inputs := requests.StringListFromRequest(r, "input", ",")
 
 // result is []string{"1", "5", "10"}
 ```
@@ -50,14 +48,14 @@ inputs := httphelpers.GetStringListFromRequest(r, "input", ",")
 
 ```go
 // r is a *http.Request struct
-isHTMX := httphelpers.IsHtmx(r)
+isHTMX := requests.IsHtmx(r)
 ```
 
-## ReadBody
+## Body
 
-**ReadBody** reads the body content from an http.Request as data into
-the provided destination variable. It attempts to determine the correct 
-MIME type. Currently, this supports JSON and XML.
+**Body** reads the body content from an http.Request and unmarshals it
+into a struct. It attempts to determine the correct MIME type. Currently, this
+supports JSON and XML.
 
 ```go
 type Person struct {
@@ -65,9 +63,6 @@ type Person struct {
    Age int
 }
 
-dest := &Person{}
-
 // r is an http.Request
-dest, err := httphelpers.ReadBody(r)
+person, err := requests.Body[Person](r)
 ```
-

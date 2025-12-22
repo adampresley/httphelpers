@@ -41,7 +41,7 @@ func TestGetAuthorizationBearer(t *testing.T) {
 				req.Header.Set("Authorization", tc.header)
 			}
 
-			token, err := GetAuthorizationBearer(req)
+			token, err := AuthorizationBearer(req)
 
 			if tc.expectError {
 				if err == nil {
@@ -77,7 +77,7 @@ func TestGetFromRequest(t *testing.T) {
 	}
 
 	t.Run("StringPrecedence", func(t *testing.T) {
-		got := GetFromRequest[string](req, "string")
+		got := Get[string](req, "string")
 
 		if got != "form_string" {
 			t.Errorf("Expected 'form_string' for string precedence, but got '%s'", got)
@@ -85,7 +85,7 @@ func TestGetFromRequest(t *testing.T) {
 	})
 
 	t.Run("PathValue", func(t *testing.T) {
-		got := GetFromRequest[int](req, "int_path_only")
+		got := Get[int](req, "int_path_only")
 
 		if got != 789 {
 			t.Errorf("Expected 789 for path-only int, but got %d", got)
@@ -93,7 +93,7 @@ func TestGetFromRequest(t *testing.T) {
 	})
 
 	t.Run("Int", func(t *testing.T) {
-		got := GetFromRequest[int](req, "int")
+		got := Get[int](req, "int")
 
 		if got != 123 {
 			t.Errorf("Expected 123 for int, but got %d", got)
@@ -101,7 +101,7 @@ func TestGetFromRequest(t *testing.T) {
 	})
 
 	t.Run("Bool", func(t *testing.T) {
-		got := GetFromRequest[bool](req, "bool")
+		got := Get[bool](req, "bool")
 
 		if !got {
 			t.Error("Expected true for bool, but got false")
@@ -110,7 +110,7 @@ func TestGetFromRequest(t *testing.T) {
 
 	t.Run("StringSlice", func(t *testing.T) {
 		expected := []string{"form_slice1", "form_slice2"}
-		got := GetFromRequest[[]string](req, "slice")
+		got := Get[[]string](req, "slice")
 
 		if !reflect.DeepEqual(got, expected) {
 			t.Errorf("Expected string slice %v, but got %v", expected, got)
@@ -118,12 +118,12 @@ func TestGetFromRequest(t *testing.T) {
 	})
 
 	t.Run("ZeroValue", func(t *testing.T) {
-		gotString := GetFromRequest[string](req, "nonexistent")
+		gotString := Get[string](req, "nonexistent")
 		if gotString != "" {
 			t.Errorf("Expected zero value '' for string, but got '%s'", gotString)
 		}
 
-		gotInt := GetFromRequest[int](req, "nonexistent")
+		gotInt := Get[int](req, "nonexistent")
 		if gotInt != 0 {
 			t.Errorf("Expected zero value 0 for int, but got %d", gotInt)
 		}
@@ -133,7 +133,7 @@ func TestGetFromRequest(t *testing.T) {
 func TestGetStringListFromRequest(t *testing.T) {
 	req := httptest.NewRequest("GET", "/?list=a,b,c", nil)
 	expected := []string{"a", "b", "c"}
-	got := GetStringListFromRequest(req, "list", ",")
+	got := StringListFromRequest(req, "list", ",")
 
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("Expected %v, but got %v", expected, got)
@@ -167,7 +167,7 @@ func TestReadBody(t *testing.T) {
 		req := httptest.NewRequest("POST", "/", bytes.NewReader(jsonData))
 		req.Header.Set("Content-Type", "application/json")
 
-		result, err := ReadBody[BodyTestPayload](req)
+		result, err := Body[BodyTestPayload](req)
 		if err != nil {
 			t.Fatalf("ReadBody failed for JSON: %v", err)
 		}
@@ -182,7 +182,7 @@ func TestReadBody(t *testing.T) {
 		req := httptest.NewRequest("POST", "/", bytes.NewReader(xmlData))
 		req.Header.Set("Content-Type", "application/xml")
 
-		result, err := ReadBody[BodyTestPayload](req)
+		result, err := Body[BodyTestPayload](req)
 		if err != nil {
 			t.Fatalf("ReadBody failed for XML: %v", err)
 		}
@@ -197,7 +197,7 @@ func TestReadBody(t *testing.T) {
 		req := httptest.NewRequest("POST", "/", strings.NewReader(badJSON))
 		req.Header.Set("Content-Type", "application/json")
 
-		_, err := ReadBody[BodyTestPayload](req)
+		_, err := Body[BodyTestPayload](req)
 		if err == nil {
 			t.Fatal("Expected an error for bad JSON, but got nil")
 		}
@@ -208,7 +208,7 @@ func TestReadBody(t *testing.T) {
 		req.Body = io.NopCloser(strings.NewReader(""))
 		req.Header.Set("Content-Type", "application/json")
 
-		_, err := ReadBody[BodyTestPayload](req)
+		_, err := Body[BodyTestPayload](req)
 		if err == nil {
 			t.Fatal("Expected an error for empty body, but got nil")
 		}
@@ -218,7 +218,7 @@ func TestReadBody(t *testing.T) {
 		req := httptest.NewRequest("POST", "/", strings.NewReader("text content"))
 		req.Header.Set("Content-Type", "text/plain")
 
-		_, err := ReadBody[BodyTestPayload](req)
+		_, err := Body[BodyTestPayload](req)
 		if err == nil {
 			t.Fatal("Expected an error for unsupported type, but got nil")
 		}
