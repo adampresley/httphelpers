@@ -143,7 +143,7 @@ func TextUnauthorized(w http.ResponseWriter, value any) {
 }
 
 func Bytes(w http.ResponseWriter, status int, contentType string, value []byte) {
-	write(w, contentType, status, value)
+	write(w, contentType, status, string(value))
 }
 
 func write(w http.ResponseWriter, contentType string, status int, value any) {
