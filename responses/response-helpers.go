@@ -142,6 +142,10 @@ func TextUnauthorized(w http.ResponseWriter, value any) {
 	Text(w, http.StatusUnauthorized, value)
 }
 
+func Bytes(w http.ResponseWriter, status int, contentType string, value []byte) {
+	write(w, contentType, status, value)
+}
+
 func write(w http.ResponseWriter, contentType string, status int, value any) {
 	w.Header().Set("Content-Type", contentType)
 
