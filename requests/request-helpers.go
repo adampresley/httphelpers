@@ -59,7 +59,7 @@ func Body[T any](r *http.Request) (T, error) {
 	return result, nil
 }
 
-func Bytes(r *http.Request, name string) ([]byte, error) {
+func Bytes(r *http.Request) ([]byte, error) {
 	var (
 		err error
 		b   []byte
