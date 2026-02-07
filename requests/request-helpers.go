@@ -59,6 +59,19 @@ func Body[T any](r *http.Request) (T, error) {
 	return result, nil
 }
 
+func Bytes(r *http.Request, name string) ([]byte, error) {
+	var (
+		err error
+		b   []byte
+	)
+
+	if b, err = io.ReadAll(r.Body); err != nil {
+		return b, fmt.Errorf("error reading request body: %w", err)
+	}
+
+	return b, nil
+}
+
 /*
 Get retrieves a value from the request's form or path parameters.
 It supports the following types:
